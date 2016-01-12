@@ -1,10 +1,21 @@
 -module(client).
 -author("guna").
--export([start/4,reciv/1]).
-start(Type,Name,To,Msg)->
+-export([start/0,reciv/1]).
+-record(reg,name=test).
+-record(dereg,name=test).
+start()->
   {ok,S}=gen_tcp:connect({127,0,0,7},9000,[]),
-  type(Type,Name,S,To,Msg),
-  client:reciv(S).
+  spwan(client,reciv,[S]).
+
+reciv(S)->
+  inet:setopts(S,[{active,once}]),
+  case gen_tcp:recv(S,0) of
+    {tcp,S,Bin}->
+	io:format("~p~n",[Bin]);
+    Any->
+      io:format("recived:~p~n",[Any]),
+      reciv(S)
+  end.
   
 type(Type,Name,S,To,Msg)->
   case Type of
@@ -19,14 +30,7 @@ type(Type,Name,S,To,Msg)->
     _-> error
   end.
   
-reciv(S)->
-  case gen_tcp:recv(S,0) of
-    {tcp,S,Bin}->
-	io:format("~p~n",[Bin]);
-    Any->
-      io:format("recived:~p~n",[Any]),
-      reciv(S)
-  end.
+
 
 reg(Name,S)->  
   Msg={reg,Name},
